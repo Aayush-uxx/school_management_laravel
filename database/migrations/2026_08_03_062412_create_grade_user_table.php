@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('grades', function (Blueprint $table) {
+        Schema::create('grade_user', function (Blueprint $table) {
             $table->id();
-            $table->integer('grade');
-            $table->enum('section',['A','B']);
-            $table->unique(['grade','section']);
+            $table->timestamps();
         });
     }
 
@@ -24,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('grades');
+        Schema::dropIfExists('grade_user');
     }
 };

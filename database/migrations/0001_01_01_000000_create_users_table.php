@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role',['admin','teacher'])->default('teacher');
+            $table->enum('employment_type',['full-time','part-time'])->nullable();
+            $table->json('working_days')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('timetables', function (Blueprint $table) {
             $table->id();
+            $table->enum('day', ['sunday','monday','tuesday','wednesday','thursday','friday']);
+            $table->string('subject');
+            $table->integer('period');
+            $table->string('time');
+            $table->foreignId('grade_id')->constrained();
+            $table->foreignId('teacher_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->boolean('is_permanent')->default(true);
             $table->timestamps();
         });
     }
