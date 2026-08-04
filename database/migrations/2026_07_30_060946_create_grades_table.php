@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('grade');
             $table->enum('section',['A','B']);
             $table->unique(['grade','section']);
+            $table->timestamps();
         });
     }
 

@@ -31,11 +31,19 @@ class User extends Authenticatable
             'working_days' => 'array',
         ];
     }
-    public function subjects(){
-        return $this->belongsToMany(Subject::class);
+    public function assignments()
+    {
+        return $this->hasMany(TeacherAssignment::class);
     }
-    public function grades(){
-        return $this->belongsToMany(Grade::class);
+    
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'teacher_assignments')->distinct();
+    }
+    
+    public function grades()
+    {
+        return $this->belongsToMany(Grade::class, 'teacher_assignments')->distinct();
     }
     public function timetables(){
         return $this->hasMany(Timetable::class,'teacher_id');
