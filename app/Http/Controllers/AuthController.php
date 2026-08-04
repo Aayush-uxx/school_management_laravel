@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Models\TeacherAssignment;
+use App\Http\Controllers\TimetableController;
 class AuthController extends Controller
 {
     //
@@ -41,7 +42,7 @@ class AuthController extends Controller
             'subject_id' => $assignment['subject_id'],
         ]);
     }
-
+    TimetableController::generateMasterTimetable();
     $token = $user->createToken('auth-token')->plainTextToken;
 
     return response()->json([
