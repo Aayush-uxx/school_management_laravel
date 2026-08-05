@@ -5,6 +5,8 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\TeacherController;
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -32,4 +34,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/leaves', [LeaveController::class, 'index']);
     Route::put('/leaves/{id}/approve', [LeaveController::class, 'approve']);
     Route::put('/leaves/{id}/reject', [LeaveController::class, 'reject']);
+});
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/teachers', [TeacherController::class, 'index']);
+    Route::delete('/teachers/{id}', [TeacherController::class, 'destroy']);
 });
