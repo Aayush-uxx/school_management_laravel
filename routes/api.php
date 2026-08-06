@@ -16,28 +16,20 @@ Route::get('/timetable', [TimetableController::class, 'index']);
 Route::get('/timetable/grade/{gradeId}', [TimetableController::class, 'byGrade']);
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/subjects', [SubjectController::class, 'store']);
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
     Route::post('/grades', [GradeController::class, 'store']);
     Route::delete('/grades/{id}', [GradeController::class, 'destroy']);
-});
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/timetable/teacher/{teacherId}', [TimetableController::class, 'byTeacher']);
-});
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
-    Route::post('/leaves', [LeaveController::class, 'store']);
-    Route::get('/leaves/my-leaves', [LeaveController::class, 'myLeaves']);
-});
-
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/leaves', [LeaveController::class, 'index']);
     Route::put('/leaves/{id}/approve', [LeaveController::class, 'approve']);
     Route::put('/leaves/{id}/reject', [LeaveController::class, 'reject']);
-});
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/teachers', [TeacherController::class, 'index']);
     Route::delete('/teachers/{id}', [TeacherController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::get('/timetable/teacher/{teacherId}', [TimetableController::class, 'byTeacher']);
+    Route::post('/leaves', [LeaveController::class, 'store']);
+    Route::get('/leaves/my-leaves', [LeaveController::class, 'myLeaves']);
 });
