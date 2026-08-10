@@ -1,0 +1,369 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.dashboard-sidebar {
+  display: flex;
+  width: 230px;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 28px;
+  padding: 28px 18px;
+  background: var(--sidebar);
+  color: var(--surface);
+}
+
+.dashboard-sidebar h1,
+.dashboard-header h2,
+.panel h3,
+.curriculum-block h4 {
+  margin: 0;
+}
+
+.dashboard-sidebar h1 {
+  font-size: 1.25rem;
+}
+
+.sidebar-kicker,
+.eyebrow {
+  margin: 0 0 7px;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-kicker {
+  color: var(--sidebar-text);
+}
+
+.dashboard-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.dashboard-nav button,
+.sidebar-logout {
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--sidebar-contrast);
+  background: transparent;
+  text-align: left;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.dashboard-nav button:hover,
+.dashboard-nav button.active {
+  background: var(--sidebar-active);
+  color: var(--surface);
+}
+
+.sidebar-logout {
+  margin-top: auto;
+  background: var(--danger);
+  text-align: center;
+}
+
+.dashboard-content {
+  flex: 1;
+  min-width: 0;
+  padding: 34px clamp(18px, 4vw, 48px);
+}
+
+.dashboard-header,
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.dashboard-header {
+  margin-bottom: 24px;
+}
+
+.dashboard-header h2 {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.dashboard-stats,
+.section-count {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.dashboard-stats {
+  display: flex;
+  gap: 14px;
+}
+
+.dashboard-stats strong {
+  color: var(--primary-dark);
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(33, 135, 57, 0.24);
+  border-radius: 6px;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.notice-error {
+  border-color: rgba(229, 72, 77, 0.25);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.panel {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.stacked-panels {
+  display: grid;
+  gap: 20px;
+}
+
+.section-heading {
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-heading h3 {
+  font-size: 1.25rem;
+}
+
+.button {
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--surface);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.button-primary { background: var(--primary); }
+.button-primary:hover { background: var(--primary-dark); }
+.button-success { background: var(--success); }
+.button-danger { background: var(--danger); }
+
+.inline-form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--form-surface);
+}
+
+.inline-form > div,
+.select-field {
+  display: grid;
+  gap: 6px;
+}
+
+.inline-form label,
+.select-field label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.inline-form input,
+.inline-form select,
+.select-field select {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.select-field {
+  max-width: 320px;
+  margin-bottom: 20px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  min-width: 660px;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.data-table th,
+.data-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th {
+  background: var(--surface-muted);
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.data-table tbody tr:hover {
+  background: var(--surface-subtle);
+}
+
+.icon-button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--surface);
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.code-pill,
+.status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--primary-dark);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.status-pending { background: var(--warning-bg); color: var(--warning); }
+.status-approved { background: var(--success-bg); color: var(--success); }
+.status-rejected { background: var(--danger-bg); color: var(--danger); }
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.action-row .button {
+  min-height: 32px;
+  padding: 6px 9px;
+  font-size: 0.78rem;
+}
+
+.curriculum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.curriculum-block {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.curriculum-block h4 {
+  margin-bottom: 13px;
+  font-size: 1rem;
+}
+
+.curriculum-checkboxes {
+  display: grid;
+  gap: 8px;
+}
+
+.assign-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.assign-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.empty-inline,
+.schedule-status,
+.dashboard-loading {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.empty-inline {
+  margin: 16px 0 0;
+}
+
+.schedule-status {
+  margin: 0;
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.dashboard-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.timetable-current-summary {
+  margin: -8px 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 780px) {
+  .dashboard-layout {
+    display: block;
+  }
+
+  .dashboard-sidebar {
+    width: 100%;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .dashboard-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar-logout {
+    margin-top: 0;
+  }
+
+  .dashboard-content {
+    padding: 22px 14px;
+  }
+
+  .dashboard-header,
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-stats {
+    flex-wrap: wrap;
+  }
+}

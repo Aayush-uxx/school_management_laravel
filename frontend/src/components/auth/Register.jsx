@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
+import { assignmentKey, formatGradeLabel } from '../../utils/scheduleConstants';
 import './Register.css';
 
 const Register = () => {
   const { register, loading } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [employmentType, setEmploymentType] = useState('full-time');
-
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    employmentType: 'full-time',
+  });
   const [grades, setGrades] = useState([]);
   const [taken, setTaken] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -24,116 +27,149 @@ const Register = () => {
           API.get('/grades'),
           API.get('/assignments/taken'),
         ]);
-        setGrades(gradesRes.data.grades);
-        setTaken(takenRes.data.taken);
+        setGrades(gradesRes.data.grades || []);
+        setTaken(takenRes.data.taken || []);
+      } catch (requestError) {
+        setError(requestError.response?.data?.message || 'Unable to load classes. Please try again.');
       } finally {
         setDataLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
-  const isTaken = (gradeId, subjectId) =>
-    taken.some(t => t.grade_id === gradeId && t.subject_id === subjectId);
-
-  const isSelected = (gradeId, subjectId) =>
-    assignments.some(a => a.grade_id === gradeId && a.subject_id === subjectId);
-
-  const toggleAssignment = (gradeId, subjectId) => {
-    if (isSelected(gradeId, subjectId)) {
-      setAssignments(assignments.filter(a => !(a.grade_id === gradeId && a.subject_id === subjectId)));
-    } else {
-      setAssignments([...assignments, { grade_id: gradeId, subject_id: subjectId }]);
-    }
-  };
-
-  // grades where every subject is already taken by someone else get hidden automatically
-  const availableGrades = grades.filter(g =>
-    g.subjects.some(s => !isTaken(g.id, s.id))
+  const isTaken = (gradeId, subjectId) => taken.some(
+    (assignment) => assignmentKey(assignment.grade_id, assignment.subject_id)
+      === assignmentKey(gradeId, subjectId),
   );
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const isSelected = (gradeId, subjectId) => assignments.some(
+    (assignment) => assignmentKey(assignment.grade_id, assignment.subject_id)
+      === assignmentKey(gradeId, subjectId),
+  );
+
+  const toggleAssignment = (gradeId, subjectId) => {
+    setAssignments((currentAssignments) => {
+      if (isSelected(gradeId, subjectId)) {
+        return currentAssignments.filter(
+          (assignment) => assignmentKey(assignment.grade_id, assignment.subject_id)
+            !== assignmentKey(gradeId, subjectId),
+        );
+      }
+
+      return [...currentAssignments, { grade_id: gradeId, subject_id: subjectId }];
+    });
+  };
+
+  const handleChange = (field) => (event) => {
+    setForm((currentForm) => ({ ...currentForm, [field]: event.target.value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
 
     if (assignments.length === 0) {
-      setError('Select at least one subject to teach');
+      setError('Select at least one subject to teach.');
       return;
     }
 
     const result = await register({
-      name, email, password,
-      employment_type: employmentType,
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      employment_type: form.employmentType,
       assignments,
     });
 
-    if (!result.success) setError(result.message);
+    if (!result.success) {
+      setError(result.message);
+      return;
+    }
+
+    navigate('/teacher', { replace: true });
   };
 
-  if (dataLoading) return <div className="register-container">Loading...</div>;
+  if (dataLoading) {
+    return <div className="register-container"><p role="status">Loading classes...</p></div>;
+  }
 
   return (
-    <div className="register-container">
-      <h2>Teacher Registration</h2>
-      {error && <p className="error-text">{error}</p>}
+    <main className="register-container">
+      <div className="auth-heading">
+        <p className="eyebrow">School scheduling</p>
+        <h1>Teacher Registration</h1>
+        <p className="auth-intro">Create your account and select the grade subjects you teach.</p>
+      </div>
+
+      {error && <p className="error-text" role="alert">{error}</p>}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Full Name</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+          <label htmlFor="teacher-name">Full Name</label>
+          <input id="teacher-name" type="text" value={form.name} onChange={handleChange('name')} required />
         </div>
         <div className="form-group">
-          <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label htmlFor="teacher-email">Email</label>
+          <input id="teacher-email" type="email" value={form.email} onChange={handleChange('email')} required />
         </div>
         <div className="form-group">
-          <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label htmlFor="teacher-password">Password</label>
+          <input id="teacher-password" type="password" minLength="6" value={form.password} onChange={handleChange('password')} required />
         </div>
         <div className="form-group">
-          <label>Employment Type</label>
-          <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)}>
-            <option value="full-time">Full Time (Mon-Fri)</option>
-            <option value="part-time">Part Time (Mon, Wed, Fri)</option>
+          <label htmlFor="employment-type">Employment Type</label>
+          <select id="employment-type" value={form.employmentType} onChange={handleChange('employmentType')}>
+            <option value="full-time">Full Time (Monday–Friday)</option>
+            <option value="part-time">Part Time (Monday, Wednesday, Friday)</option>
           </select>
         </div>
 
-        <div className="form-group">
-          <label>Select classes and subjects to teach</label>
-          {availableGrades.length === 0 ? (
-            <p className="muted-text">Every grade is fully staffed right now.</p>
+        <fieldset className="assignment-fieldset">
+          <legend>Select classes and subjects to teach</legend>
+          <p className="form-help">Choose one or more subjects. A subject marked “taken” is already assigned to another teacher.</p>
+          {grades.length === 0 ? (
+            <p className="muted-text">No grades have been configured yet.</p>
           ) : (
             <div className="assign-grid">
-              {availableGrades.map(g => (
-                <div key={g.id} className="assign-grade-block">
-                  <div className="assign-grade-title">Grade {g.grade} {g.section}</div>
+              {grades.map((grade) => (
+                <section key={grade.id} className="assign-grade-block" aria-labelledby={`grade-${grade.id}`}>
+                  <h2 id={`grade-${grade.id}`} className="assign-grade-title">{formatGradeLabel(grade)}</h2>
                   <div className="assign-subject-list">
-                    {g.subjects.map(s => {
-                      const taken_ = isTaken(g.id, s.id);
+                    {(grade.subjects || []).map((subject) => {
+                      const takenAssignment = isTaken(grade.id, subject.id);
+                      const selected = isSelected(grade.id, subject.id);
+                      const checkboxId = `assignment-${grade.id}-${subject.id}`;
+
                       return (
-                        <label key={s.id} className={`assign-checkbox ${taken_ ? 'disabled' : ''}`}>
+                        <label key={subject.id} className={`assign-checkbox${takenAssignment ? ' disabled' : ''}`} htmlFor={checkboxId}>
                           <input
+                            id={checkboxId}
                             type="checkbox"
-                            disabled={taken_}
-                            checked={isSelected(g.id, s.id)}
-                            onChange={() => toggleAssignment(g.id, s.id)}
+                            disabled={takenAssignment}
+                            checked={selected}
+                            onChange={() => toggleAssignment(grade.id, subject.id)}
                           />
-                          {s.name}{taken_ ? ' (taken)' : ''}
+                          <span>{subject.name}</span>
+                          {takenAssignment && <small>(taken)</small>}
                         </label>
                       );
                     })}
                   </div>
-                </div>
+                </section>
               ))}
             </div>
           )}
-        </div>
+        </fieldset>
 
-        <button type="submit" disabled={loading}>{loading ? 'Registering...' : 'Register'}</button>
+        <button className="auth-submit" type="submit" disabled={loading || grades.length === 0}>
+          {loading ? 'Registering...' : 'Register'}
+        </button>
       </form>
 
-      <p>Already have account? <Link to="/login">Login</Link></p>
-    </div>
+      <p className="auth-footer">Already have an account? <Link to="/login">Login</Link></p>
+    </main>
   );
 };
 

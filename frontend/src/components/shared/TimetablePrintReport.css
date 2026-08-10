@@ -1,0 +1,117 @@
+.timetable-print-report {
+  display: none;
+}
+
+.timetable-print-report__header h2,
+.timetable-print-report__header p,
+.timetable-print-report__grade h3 {
+  margin: 0;
+}
+
+.timetable-print-report__header {
+  margin-bottom: 16px;
+}
+
+.timetable-print-report__header p {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+.timetable-print-report__grade {
+  margin-top: 20px;
+}
+
+.timetable-print-report__grade h3 {
+  margin-bottom: 8px;
+  color: var(--primary-dark);
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 12mm;
+  }
+
+  body[data-print-target] > #root > * {
+    display: block !important;
+  }
+
+  body[data-print-target] * {
+    visibility: hidden !important;
+  }
+
+  body[data-print-target] [data-print-target-element="true"],
+  body[data-print-target] [data-print-target-element="true"] * {
+    visibility: visible !important;
+  }
+
+  body[data-print-target] [data-print-target-element="true"] {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  body[data-print-target] .timetable-print-report {
+    color: var(--text);
+  }
+
+  body[data-print-target] .timetable-print-report__grade {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  body[data-print-target] .timetable-print-report__grade:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body[data-print-target] .schedule-table__toolbar,
+  body[data-print-target] .schedule-table__mobile-view,
+  body[data-print-target] .no-print {
+    display: none !important;
+  }
+
+  body[data-print-target] .schedule-table__print-header {
+    display: block !important;
+    margin-bottom: 10px;
+  }
+
+  body[data-print-target] .schedule-table__viewport {
+    display: block !important;
+    max-width: none;
+    overflow: visible;
+    border: 0;
+    box-shadow: none;
+  }
+
+  body[data-print-target] .schedule-table__matrix {
+    width: 100%;
+    min-width: 0;
+    font-size: 8pt;
+  }
+
+  body[data-print-target] .schedule-table__matrix th,
+  body[data-print-target] .schedule-table__matrix td {
+    padding: 7px;
+  }
+
+  body[data-print-target] .schedule-table__period-column {
+    width: auto;
+  }
+
+  body[data-print-target] .schedule-table__day-column {
+    width: 70px;
+  }
+
+  body[data-print-target] .schedule-table__period-name {
+    min-height: 0;
+  }
+
+  body[data-print-target] .schedule-table__period-time {
+    white-space: normal;
+  }
+}

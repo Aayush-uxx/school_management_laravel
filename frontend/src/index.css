@@ -9,11 +9,72 @@
   --accent: #12a594;
   --danger: #e5484d;
   --danger-bg: #fdeceb;
+  --success: #218739;
+  --success-bg: #eaf8ed;
+  --success-soft: #effaf1;
+  --warning: #8f6500;
+  --warning-bg: #fff6df;
+  --surface-muted: #eef2fb;
+  --surface-subtle: #fbfcff;
+  --form-surface: #f7f8fc;
+  --sidebar: #27385f;
+  --sidebar-active: #3b4e7b;
+  --sidebar-text: #aebce0;
+  --sidebar-contrast: #e2e8fa;
+  --sidebar-email: #b9c5e3;
+  --text-disabled: #9aa0ab;
+  --schedule-header: #2f477d;
+  --schedule-break: #f0f2f8;
+  --schedule-day-column-width: 104px;
+  --schedule-period-column-width: 144px;
+  --schedule-table-min-width: 1544px;
+  --schedule-mobile-control-height: 44px;
   --radius: 10px;
   --shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --text-sm: 14px;
 }
 
 * { box-sizing: border-box; }
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  border-radius: 6px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 3px solid rgba(52, 84, 209, 0.3);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 body {
   margin: 0;

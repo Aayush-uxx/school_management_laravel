@@ -1,602 +1,317 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
-import API from "../../services/api";
-import { DAYS, PERIODS } from "../../utils/scheduleConstants";
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import API from '../../services/api';
+import ScheduleActions from '../shared/ScheduleActions';
+import ScheduleTable from '../shared/ScheduleTable';
+import TimetableHistory from '../shared/TimetableHistory';
+import TimetablePrintReport from '../shared/TimetablePrintReport';
+import { formatGradeLabel } from '../../utils/scheduleConstants';
+import './AdminDashboard.css';
+
+const TABS = ['teachers', 'subjects', 'grades', 'timetable', 'leaves'];
+const GLOBAL_PRINT_REPORT_ID = 'global-timetable-print-report';
 
 const AdminDashboard = () => {
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState("teachers");
+  const [activeTab, setActiveTab] = useState('teachers');
   const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
   const [leaves, setLeaves] = useState([]);
+  const [currentTimetable, setCurrentTimetable] = useState([]);
+  const [currentVersion, setCurrentVersion] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
 
   const [showSubjectForm, setShowSubjectForm] = useState(false);
-  const [newSubject, setNewSubject] = useState({ name: "", code: "" });
-
+  const [newSubject, setNewSubject] = useState({ name: '', code: '' });
   const [showGradeForm, setShowGradeForm] = useState(false);
-  const [newGrade, setNewGrade] = useState({ grade: "", section: "A" });
-
-  const [selectedGradeId, setSelectedGradeId] = useState("");
+  const [newGrade, setNewGrade] = useState({ grade: '', section: 'A' });
+  const [selectedGradeId, setSelectedGradeId] = useState('');
   const [gradeTimetable, setGradeTimetable] = useState([]);
+  const [gradeVersion, setGradeVersion] = useState(null);
   const [gradeLoading, setGradeLoading] = useState(false);
+  const [versionHistory, setVersionHistory] = useState([]);
+  const [loadedVersions, setLoadedVersions] = useState({});
+  const [loadingVersionId, setLoadingVersionId] = useState(null);
+  const [historyError, setHistoryError] = useState('');
 
-  useEffect(() => {
-    fetchData();
+  const fetchData = useCallback(async () => {
+    setPageError('');
+    const [teachersRes, subjectsRes, gradesRes, leavesRes, timetableRes] = await Promise.allSettled([
+      API.get('/teachers'),
+      API.get('/subjects'),
+      API.get('/grades'),
+      API.get('/leaves'),
+      API.get('/timetable'),
+    ]);
+
+    if (teachersRes.status === 'fulfilled') setTeachers(teachersRes.value.data.teachers || []);
+    if (subjectsRes.status === 'fulfilled') setSubjects(subjectsRes.value.data.subjects || []);
+    if (gradesRes.status === 'fulfilled') setGrades(gradesRes.value.data.grades || []);
+    if (leavesRes.status === 'fulfilled') setLeaves(leavesRes.value.data.leaves || []);
+    if (timetableRes.status === 'fulfilled') {
+      setCurrentTimetable(timetableRes.value.data.timetable || []);
+      setCurrentVersion(timetableRes.value.data.version || null);
+    }
+
+    const failedRequest = [teachersRes, subjectsRes, gradesRes, leavesRes, timetableRes]
+      .find((result) => result.status === 'rejected');
+    if (failedRequest) {
+      setPageError(failedRequest.reason?.response?.data?.message || 'Some dashboard data could not be loaded.');
+    }
+    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (selectedGradeId) fetchGradeTimetable(selectedGradeId);
-  }, [selectedGradeId]);
-
-  const fetchData = async () => {
-    const [teachersRes, subjectsRes, gradesRes, leavesRes] =
-      await Promise.allSettled([
-        API.get("/teachers"),
-        API.get("/subjects"),
-        API.get("/grades"),
-        API.get("/leaves"),
-      ]);
-    if (teachersRes.status === "fulfilled")
-      setTeachers(teachersRes.value.data.teachers);
-    if (subjectsRes.status === "fulfilled")
-      setSubjects(subjectsRes.value.data.subjects);
-    if (gradesRes.status === "fulfilled")
-      setGrades(gradesRes.value.data.grades);
-    if (leavesRes.status === "fulfilled")
-      setLeaves(leavesRes.value.data.leaves);
-    setLoading(false);
-  };
-
-  const fetchGradeTimetable = async (gradeId) => {
+  const fetchGradeTimetable = useCallback(async (gradeId) => {
     setGradeLoading(true);
     try {
-      const res = await API.get(`/timetable/grade/${gradeId}`);
-      setGradeTimetable(res.data.timetable);
+      const response = await API.get(`/timetable/grade/${gradeId}`);
+      setGradeTimetable(response.data.timetable || []);
+      setGradeVersion(response.data.version || null);
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to load this timetable.');
+      setGradeTimetable([]);
+      setGradeVersion(null);
     } finally {
       setGradeLoading(false);
     }
-  };
-  const toggleCurriculum = async (grade, subjectId) => {
-    const current = grade.subjects.map((s) => s.id);
-    const updated = current.includes(subjectId)
-      ? current.filter((id) => id !== subjectId)
-      : [...current, subjectId];
+  }, []);
 
-    if (updated.length === 0) {
-      alert("A grade needs at least one subject");
+  const fetchVersionHistory = useCallback(async (gradeId) => {
+    setHistoryError('');
+    if (!gradeId) {
+      setVersionHistory([]);
       return;
     }
 
-    await API.put(`/grades/${grade.id}/subjects`, { subject_ids: updated });
-    fetchData();
+    try {
+      const response = await API.get(`/timetable/versions?grade_id=${gradeId}`);
+      setVersionHistory(response.data.versions || []);
+    } catch (requestError) {
+      setHistoryError(requestError.response?.data?.message || 'Unable to load timetable history.');
+      setVersionHistory([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (selectedGradeId) {
+        void fetchGradeTimetable(selectedGradeId);
+        void fetchVersionHistory(selectedGradeId);
+      } else {
+        setGradeTimetable([]);
+        setGradeVersion(null);
+        setVersionHistory([]);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchGradeTimetable, fetchVersionHistory, selectedGradeId]);
+
+  const refreshDashboard = async () => {
+    await fetchData();
+    if (selectedGradeId) {
+      await Promise.all([
+        fetchGradeTimetable(selectedGradeId),
+        fetchVersionHistory(selectedGradeId),
+      ]);
+    }
   };
 
-  const getSlot = (dayName, periodId) => {
-    const dayKey = dayName.toLowerCase();
-    return gradeTimetable.find(
-      (t) => t.day === dayKey && t.period === periodId
-    );
+  const loadVersion = async (versionId) => {
+    setLoadingVersionId(versionId);
+    setHistoryError('');
+    try {
+      const response = await API.get(`/timetable/versions/${versionId}?grade_id=${selectedGradeId}`);
+      setLoadedVersions((current) => ({
+        ...current,
+        [versionId]: { version: response.data.version, timetable: response.data.timetable || [] },
+      }));
+    } catch (requestError) {
+      setHistoryError(requestError.response?.data?.message || 'Unable to load this timetable version.');
+    } finally {
+      setLoadingVersionId(null);
+    }
+  };
+
+  const toggleCurriculum = async (grade, subjectId) => {
+    const currentSubjectIds = (grade.subjects || []).map((subject) => subject.id);
+    const updatedSubjectIds = currentSubjectIds.includes(subjectId)
+      ? currentSubjectIds.filter((id) => id !== subjectId)
+      : [...currentSubjectIds, subjectId];
+
+    if (updatedSubjectIds.length === 0) {
+      setActionMessage('A grade must have at least one subject.');
+      return;
+    }
+
+    try {
+      await API.put(`/grades/${grade.id}/subjects`, { subject_ids: updatedSubjectIds });
+      setActionMessage(`${formatGradeLabel(grade)} curriculum updated. A new timetable version was saved.`);
+      await refreshDashboard();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to update the curriculum.');
+    }
   };
 
   const deleteTeacher = async (id) => {
-    if (window.confirm("Remove this teacher?")) {
+    if (!window.confirm('Remove this teacher?')) return;
+
+    try {
       await API.delete(`/teachers/${id}`);
-      fetchData();
-      if (selectedGradeId) fetchGradeTimetable(selectedGradeId);
+      setActionMessage('Teacher removed and a new timetable version was saved.');
+      await refreshDashboard();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to remove this teacher.');
     }
   };
 
-  const addSubject = async () => {
-    await API.post("/subjects", newSubject);
-    setShowSubjectForm(false);
-    setNewSubject({ name: "", code: "" });
-    fetchData();
+  const addSubject = async (event) => {
+    event.preventDefault();
+    try {
+      await API.post('/subjects', newSubject);
+      setShowSubjectForm(false);
+      setNewSubject({ name: '', code: '' });
+      setActionMessage('Subject added and a new timetable version was saved.');
+      await refreshDashboard();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to add this subject.');
+    }
   };
 
   const deleteSubject = async (id) => {
-    if (window.confirm("Delete subject?")) {
+    if (!window.confirm('Delete this subject from every grade?')) return;
+
+    try {
       await API.delete(`/subjects/${id}`);
-      fetchData();
+      setActionMessage('Subject removed and a new timetable version was saved.');
+      await refreshDashboard();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to delete this subject.');
     }
   };
 
-  const addGrade = async () => {
-    await API.post("/grades", {
-      grade: parseInt(newGrade.grade),
-      section: newGrade.section,
-    });
-    setShowGradeForm(false);
-    setNewGrade({ grade: "", section: "A" });
-    fetchData();
+  const addGrade = async (event) => {
+    event.preventDefault();
+    const gradeNumber = Number(newGrade.grade);
+    if (!Number.isInteger(gradeNumber) || gradeNumber < 1 || gradeNumber > 10) {
+      setActionMessage('Grade must be a whole number from 1 to 10.');
+      return;
+    }
+
+    try {
+      await API.post('/grades', { grade: gradeNumber, section: newGrade.section });
+      setShowGradeForm(false);
+      setNewGrade({ grade: '', section: 'A' });
+      setActionMessage('Grade section added and a new timetable version was saved.');
+      await refreshDashboard();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to add this grade section.');
+    }
   };
 
   const deleteGrade = async (id) => {
-    if (window.confirm("Delete grade?")) {
+    if (!window.confirm('Delete this grade section? Its timetable rows will also be removed.')) return;
+
+    try {
       await API.delete(`/grades/${id}`);
-      fetchData();
+      if (String(selectedGradeId) === String(id)) setSelectedGradeId('');
+      setActionMessage('Grade section deleted and a new timetable version was saved.');
+      await refreshDashboard();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to delete this grade section.');
     }
   };
 
   const handleLeaveAction = async (id, action) => {
-    await API.put(`/leaves/${id}/${action}`);
-    fetchData();
+    try {
+      await API.put(`/leaves/${id}/${action}`);
+      setActionMessage(`Leave ${action}d.`);
+      await fetchData();
+    } catch (requestError) {
+      setActionMessage(requestError.response?.data?.message || 'Unable to update this leave request.');
+    }
   };
 
-  if (loading) return <div style={{ padding: "20px" }}>Loading...</div>;
+  if (loading) return <main className="dashboard-loading" role="status">Loading admin dashboard...</main>;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial" }}>
-      <div
-        style={{
-          width: "220px",
-          background: "#2c3e50",
-          color: "white",
-          padding: "20px",
-        }}
-      >
-        <h3>Scheduler Admin</h3>
-        <hr style={{ margin: "15px 0", borderColor: "#34495e" }} />
-        {["teachers", "subjects", "grades", "timetable", "leaves"].map(
-          (tab) => (
-            <p
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                cursor: "pointer",
-                padding: "10px",
-                textTransform: "capitalize",
-                background: activeTab === tab ? "#34495e" : "",
-                borderRadius: "4px",
-              }}
-            >
-              {tab}
-            </p>
-          )
-        )}
-        <button
-          onClick={logout}
-          style={{
-            width: "100%",
-            marginTop: "20px",
-            padding: "10px",
-            background: "#e74c3c",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          Logout
-        </button>
-      </div>
+    <div className="dashboard-layout">
+      <aside className="dashboard-sidebar">
+        <div>
+          <p className="sidebar-kicker">School operations</p>
+          <h1>Scheduler Admin</h1>
+        </div>
+        <nav className="dashboard-nav" aria-label="Admin sections">
+          {TABS.map((tab) => (
+            <button type="button" key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>
+          ))}
+        </nav>
+        <button type="button" className="sidebar-logout" onClick={logout}>Logout</button>
+      </aside>
 
-      <div
-        style={{
-          flex: 1,
-          padding: "30px",
-          background: "#f4f7f6",
-          overflowY: "auto",
-        }}
-      >
-        {activeTab === "teachers" && (
-          <div>
-            <h2>Manage Teachers</h2>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                background: "white",
-                borderRadius: "8px",
-                overflow: "hidden",
-              }}
-            >
-              <thead style={{ background: "#3498db", color: "white" }}>
-                <tr>
-                  <th style={{ padding: "12px" }}>Name</th>
-                  <th style={{ padding: "12px" }}>Email</th>
-                  <th style={{ padding: "12px" }}>Assignments</th>
-                  <th style={{ padding: "12px" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teachers.map((t) => (
-                  <tr key={t.id} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {t.name}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {t.email}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {t.assignments
-                        .map(
-                          (a) =>
-                            `${a.subject.name} (Grade ${a.grade.grade} ${a.grade.section})`
-                        )
-                        .join(", ") || "-"}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      <button
-                        onClick={() => deleteTeacher(t.id)}
-                        style={{
-                          background: "#e74c3c",
-                          color: "white",
-                          border: "none",
-                          width: "28px",
-                          height: "28px",
-                          borderRadius: "50%",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <main className="dashboard-content">
+        <header className="dashboard-header">
+          <div><p className="eyebrow">Administration</p><h2>{activeTab === 'timetable' ? 'Class timetable' : `Manage ${activeTab}`}</h2></div>
+          <div className="dashboard-stats" aria-label="School setup summary"><span><strong>{subjects.length}</strong> subjects</span><span><strong>{grades.length}</strong> grade sections</span></div>
+        </header>
+
+        {pageError && <p className="notice notice-error" role="alert">{pageError}</p>}
+        {actionMessage && <p className="notice" role="status">{actionMessage}</p>}
+
+        {activeTab === 'teachers' && (
+          <section className="panel">
+            <div className="section-heading"><div><p className="eyebrow">Staffing</p><h3>Manage teachers</h3></div><span className="section-count">{teachers.length} registered</span></div>
+            <div className="table-scroll"><table className="data-table"><caption className="sr-only">Registered teachers and their assignments</caption><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Assignments</th><th scope="col">Action</th></tr></thead><tbody>{teachers.map((teacher) => <tr key={teacher.id}><td>{teacher.name}</td><td>{teacher.email}</td><td>{teacher.assignments?.map((assignment) => `${assignment.subject?.name || 'Subject'} (${formatGradeLabel(assignment.grade)})`).join(', ') || '—'}</td><td><button type="button" className="icon-button danger" onClick={() => deleteTeacher(teacher.id)} aria-label={`Remove ${teacher.name}`}>×</button></td></tr>)}</tbody></table>{teachers.length === 0 && <p className="empty-inline">No teachers have registered yet.</p>}</div>
+          </section>
+        )}
+
+        {activeTab === 'subjects' && (
+          <section className="panel">
+            <div className="section-heading"><div><p className="eyebrow">Curriculum</p><h3>Manage subjects</h3></div><button type="button" className="button button-primary" onClick={() => setShowSubjectForm((visible) => !visible)}>{showSubjectForm ? 'Cancel' : '+ Add subject'}</button></div>
+            {showSubjectForm && <form className="inline-form" onSubmit={addSubject}><div><label htmlFor="subject-name">Name</label><input id="subject-name" value={newSubject.name} onChange={(event) => setNewSubject({ ...newSubject, name: event.target.value })} required /></div><div><label htmlFor="subject-code">Code</label><input id="subject-code" value={newSubject.code} onChange={(event) => setNewSubject({ ...newSubject, code: event.target.value })} required /></div><button className="button button-success" type="submit">Add subject</button></form>}
+            <div className="table-scroll"><table className="data-table"><caption className="sr-only">Configured school subjects</caption><thead><tr><th scope="col">Name</th><th scope="col">Code</th><th scope="col">Action</th></tr></thead><tbody>{subjects.map((subject) => <tr key={subject.id}><td>{subject.name}</td><td><span className="code-pill">{subject.code}</span></td><td><button type="button" className="button button-danger" onClick={() => deleteSubject(subject.id)}>Delete</button></td></tr>)}</tbody></table></div>
+          </section>
+        )}
+
+        {activeTab === 'grades' && (
+          <div className="stacked-panels">
+            <section className="panel"><div className="section-heading"><div><p className="eyebrow">Class structure</p><h3>Grades 1–10 · Sections A and B</h3></div><button type="button" className="button button-primary" onClick={() => setShowGradeForm((visible) => !visible)}>{showGradeForm ? 'Cancel' : '+ Add grade'}</button></div>{showGradeForm && <form className="inline-form" onSubmit={addGrade}><div><label htmlFor="grade-number">Grade number</label><input id="grade-number" type="number" min="1" max="10" value={newGrade.grade} onChange={(event) => setNewGrade({ ...newGrade, grade: event.target.value })} required /></div><div><label htmlFor="grade-section">Section</label><select id="grade-section" value={newGrade.section} onChange={(event) => setNewGrade({ ...newGrade, section: event.target.value })}><option value="A">A</option><option value="B">B</option></select></div><button className="button button-success" type="submit">Add grade</button></form>}<div className="table-scroll"><table className="data-table"><caption className="sr-only">Grade sections</caption><thead><tr><th scope="col">Grade</th><th scope="col">Section</th><th scope="col">Subjects</th><th scope="col">Action</th></tr></thead><tbody>{grades.map((grade) => <tr key={grade.id}><td>{grade.grade}</td><td>{grade.section}</td><td>{grade.subjects?.length || 0}</td><td><button type="button" className="button button-danger" onClick={() => deleteGrade(grade.id)}>Delete</button></td></tr>)}</tbody></table></div></section>
+            <section className="panel"><div className="section-heading"><div><p className="eyebrow">Curriculum mapping</p><h3>Subjects by grade section</h3></div></div><div className="curriculum-grid">{grades.map((grade) => <section className="curriculum-block" key={grade.id} aria-labelledby={`curriculum-${grade.id}`}><h4 id={`curriculum-${grade.id}`}>{formatGradeLabel(grade)}</h4><div className="curriculum-checkboxes">{subjects.map((subject) => <label key={subject.id} className="assign-checkbox" htmlFor={`curriculum-${grade.id}-${subject.id}`}><input id={`curriculum-${grade.id}-${subject.id}`} type="checkbox" checked={grade.subjects?.some((gradeSubject) => gradeSubject.id === subject.id) || false} onChange={() => toggleCurriculum(grade, subject.id)} /><span>{subject.name}</span></label>)}</div></section>)}</div></section>
           </div>
         )}
 
-        {activeTab === "subjects" && (
-          <div>
-            <h2>Manage Subjects</h2>
-            <button
-              onClick={() => setShowSubjectForm(!showSubjectForm)}
-              style={{ marginBottom: "15px", padding: "8px 16px" }}
-            >
-              {showSubjectForm ? "Cancel" : "+ Add Subject"}
-            </button>
-            {showSubjectForm && (
-              <div
-                style={{
-                  background: "white",
-                  padding: "20px",
-                  borderRadius: "8px",
-                  marginBottom: "20px",
-                }}
-              >
-                <input
-                  placeholder="Name"
-                  value={newSubject.name}
-                  onChange={(e) =>
-                    setNewSubject({ ...newSubject, name: e.target.value })
-                  }
-                  style={{ marginRight: "10px", padding: "8px" }}
-                />
-                <input
-                  placeholder="Code"
-                  value={newSubject.code}
-                  onChange={(e) =>
-                    setNewSubject({ ...newSubject, code: e.target.value })
-                  }
-                  style={{ marginRight: "10px", padding: "8px" }}
-                />
-                <button
-                  onClick={addSubject}
-                  style={{
-                    padding: "8px 16px",
-                    background: "#2ecc71",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                  }}
-                >
-                  Add
-                </button>
-              </div>
-            )}
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                background: "white",
-                borderRadius: "8px",
-                overflow: "hidden",
-              }}
-            >
-              <thead style={{ background: "#3498db", color: "white" }}>
-                <tr>
-                  <th style={{ padding: "12px" }}>Name</th>
-                  <th style={{ padding: "12px" }}>Code</th>
-                  <th style={{ padding: "12px" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subjects.map((s) => (
-                  <tr key={s.id} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {s.name}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {s.code}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      <button
-                        onClick={() => deleteSubject(s.id)}
-                        style={{
-                          background: "#e74c3c",
-                          color: "white",
-                          border: "none",
-                          width: "28px",
-                          height: "28px",
-                          borderRadius: "50%",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {activeTab === 'timetable' && (
+          <div className="stacked-panels">
+            <section className="panel">
+              <div className="section-heading"><div><p className="eyebrow">Current timetable</p><h3>All grade sections</h3></div><ScheduleActions rows={currentTimetable} grades={grades} version={currentVersion} printTargetId={GLOBAL_PRINT_REPORT_ID} labelPrefix="all-school-timetables" /></div>
+              <p className="timetable-current-summary">{currentVersion ? `${currentVersion.label} · ${currentVersion.row_count} rows across ${currentVersion.grade_count} grade sections` : 'No current timetable version yet.'}</p>
+              <TimetablePrintReport timetable={currentTimetable} grades={grades} version={currentVersion} reportId={GLOBAL_PRINT_REPORT_ID} />
+            </section>
+            <section className="panel">
+              <div className="section-heading"><div><p className="eyebrow">Class view</p><h3>Selected grade timetable</h3></div></div>
+              <div className="select-field"><label htmlFor="timetable-grade">Select grade section</label><select id="timetable-grade" value={selectedGradeId} onChange={(event) => setSelectedGradeId(event.target.value)}><option value="">Choose a class</option>{grades.map((grade) => <option key={grade.id} value={grade.id}>{formatGradeLabel(grade)}</option>)}</select></div>
+              {selectedGradeId && <ScheduleTable timetable={gradeTimetable} grades={grades} mode="grade" version={gradeVersion} loading={gradeLoading} />}
+              {!selectedGradeId && <p className="schedule-status">Choose a class to view its current schedule and historical versions.</p>}
+              <TimetableHistory versions={versionHistory} grades={grades} selectedGradeId={selectedGradeId} onLoadVersion={loadVersion} loadedVersions={loadedVersions} loadingVersionId={loadingVersionId} error={historyError} />
+            </section>
           </div>
         )}
 
-        {activeTab === "grades" && (
-          <div>
-            <h2>Manage Grades</h2>
-            <button
-              onClick={() => setShowGradeForm(!showGradeForm)}
-              style={{ marginBottom: "15px", padding: "8px 16px" }}
-            >
-              {showGradeForm ? "Cancel" : "+ Add Grade"}
-            </button>
-            {showGradeForm && (
-              <div
-                style={{
-                  background: "white",
-                  padding: "20px",
-                  borderRadius: "8px",
-                  marginBottom: "20px",
-                }}
-              >
-                <input
-                  type="number"
-                  placeholder="Grade number"
-                  value={newGrade.grade}
-                  onChange={(e) =>
-                    setNewGrade({ ...newGrade, grade: e.target.value })
-                  }
-                  style={{ marginRight: "10px", padding: "8px" }}
-                />
-                <select
-                  value={newGrade.section}
-                  onChange={(e) =>
-                    setNewGrade({ ...newGrade, section: e.target.value })
-                  }
-                  style={{ marginRight: "10px", padding: "8px" }}
-                >
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                </select>
-                <button
-                  onClick={addGrade}
-                  style={{
-                    padding: "8px 16px",
-                    background: "#2ecc71",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                  }}
-                >
-                  Add
-                </button>
-              </div>
-            )}
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                background: "white",
-                borderRadius: "8px",
-                overflow: "hidden",
-              }}
-            >
-              <thead style={{ background: "#3498db", color: "white" }}>
-                <tr>
-                  <th style={{ padding: "12px" }}>Grade</th>
-                  <th style={{ padding: "12px" }}>Section</th>
-                  <th style={{ padding: "12px" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grades.map((g) => (
-                  <div key={g.id} className="curriculum-block">
-                    <div className="curriculum-title">
-                      Grade {g.grade} {g.section} — Subjects taught
-                    </div>
-                    <div className="curriculum-checkboxes">
-                      {subjects.map((s) => (
-                        <label key={s.id} className="assign-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={g.subjects.some((gs) => gs.id === s.id)}
-                            onChange={() => toggleCurriculum(g, s.id)}
-                          />
-                          {s.name}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {activeTab === 'leaves' && (
+          <section className="panel"><div className="section-heading"><div><p className="eyebrow">Requests</p><h3>Manage leave requests</h3></div></div><div className="table-scroll"><table className="data-table"><caption className="sr-only">Teacher leave requests</caption><thead><tr><th scope="col">Teacher</th><th scope="col">Date</th><th scope="col">Reason</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>{leaves.map((leave) => <tr key={leave.id}><td>{leave.teacher?.name || '—'}</td><td>{leave.date}</td><td>{leave.reason}</td><td><span className={`status status-${leave.status}`}>{leave.status}</span></td><td>{leave.status === 'pending' && <div className="action-row"><button type="button" className="button button-success" onClick={() => handleLeaveAction(leave.id, 'approve')}>Approve</button><button type="button" className="button button-danger" onClick={() => handleLeaveAction(leave.id, 'reject')}>Reject</button></div>}</td></tr>)}</tbody></table>{leaves.length === 0 && <p className="empty-inline">No leave requests.</p>}</div></section>
         )}
-
-        {activeTab === "timetable" && (
-          <div>
-            <h2>Timetable</h2>
-            <select
-              value={selectedGradeId}
-              onChange={(e) => setSelectedGradeId(e.target.value)}
-              style={{ padding: "8px", marginBottom: "20px" }}
-            >
-              <option value="">Select Grade</option>
-              {grades.map((g) => (
-                <option key={g.id} value={g.id}>
-                  Grade {g.grade} {g.section}
-                </option>
-              ))}
-            </select>
-
-            {selectedGradeId && !gradeLoading && (
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  background: "white",
-                }}
-              >
-                <thead>
-                  <tr style={{ background: "#2c3e50", color: "white" }}>
-                    <th style={{ padding: "12px", border: "1px solid #ddd" }}>
-                      Day/Period
-                    </th>
-                    {PERIODS.map((p) => (
-                      <th
-                        key={p.id}
-                        style={{ padding: "12px", border: "1px solid #ddd" }}
-                      >
-                        {p.isBreak ? "Break" : p.name}
-                        <br />
-                        <small>{p.time}</small>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {DAYS.map((day) => (
-                    <tr key={day}>
-                      <td
-                        style={{
-                          padding: "12px",
-                          border: "1px solid #ddd",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {day}
-                      </td>
-                      {PERIODS.map((period) => {
-                        if (period.isBreak)
-                          return (
-                            <td
-                              key={period.id}
-                              style={{
-                                padding: "12px",
-                                border: "1px solid #ddd",
-                                color: "#999",
-                              }}
-                            >
-                              Break
-                            </td>
-                          );
-                        const slot = getSlot(day, period.id);
-                        return (
-                          <td
-                            key={period.id}
-                            style={{
-                              padding: "12px",
-                              border: "1px solid #ddd",
-                            }}
-                          >
-                            <div
-                              style={{ fontWeight: "bold", color: "#2980b9" }}
-                            >
-                              {slot?.subject || "-"}
-                            </div>
-                            <div style={{ fontSize: "11px", color: "#7f8c8d" }}>
-                              {slot?.teacher?.name || "-"}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {activeTab === "leaves" && (
-          <div>
-            <h2>Manage Leaves</h2>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                background: "white",
-                borderRadius: "8px",
-                overflow: "hidden",
-              }}
-            >
-              <thead style={{ background: "#f39c12", color: "white" }}>
-                <tr>
-                  <th style={{ padding: "12px" }}>Teacher</th>
-                  <th style={{ padding: "12px" }}>Date</th>
-                  <th style={{ padding: "12px" }}>Reason</th>
-                  <th style={{ padding: "12px" }}>Status</th>
-                  <th style={{ padding: "12px" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaves.map((l) => (
-                  <tr key={l.id} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {l.teacher?.name}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {l.date}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {l.reason}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {l.status}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>
-                      {l.status === "pending" && (
-                        <>
-                          <button
-                            onClick={() => handleLeaveAction(l.id, "approve")}
-                            style={{
-                              background: "#27ae60",
-                              color: "white",
-                              border: "none",
-                              padding: "4px 8px",
-                              marginRight: "5px",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleLeaveAction(l.id, "reject")}
-                            style={{
-                              background: "#e74c3c",
-                              color: "white",
-                              border: "none",
-                              padding: "4px 8px",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 };

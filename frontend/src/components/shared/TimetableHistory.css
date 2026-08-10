@@ -1,0 +1,100 @@
+.panel-subsection {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.timetable-history__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.timetable-history__heading h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.timetable-history__count,
+.timetable-history__empty,
+.timetable-history__hint,
+.timetable-history__status {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.timetable-history__empty,
+.timetable-history__hint,
+.timetable-history__status {
+  margin: 0;
+}
+
+.timetable-history__hint {
+  margin-top: 12px;
+}
+
+.timetable-history__list {
+  display: grid;
+  gap: 8px;
+}
+
+.timetable-history__item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+}
+
+.timetable-history__item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 15px;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.timetable-history__item summary::marker {
+  color: var(--primary);
+}
+
+.timetable-history__summary-main {
+  display: inline-flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.timetable-history__summary-main strong {
+  color: var(--primary-dark);
+}
+
+.timetable-history__summary-main span,
+.timetable-history__summary-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.timetable-history__summary-meta {
+  flex-shrink: 0;
+}
+
+.timetable-history__content {
+  padding: 0 15px 15px;
+}
+
+.timetable-history__schedule {
+  margin-top: 10px;
+}
+
+@media (max-width: 720px) {
+  .timetable-history__item summary {
+    align-items: flex-start;
+  }
+
+  .timetable-history__summary-meta {
+    display: none;
+  }
+}

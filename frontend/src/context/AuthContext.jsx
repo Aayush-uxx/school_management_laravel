@@ -1,7 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import API from '../services/api';
 
 const AuthContext = createContext();
+// The hook and provider intentionally share this small context module.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({children}) =>{
     const [user,setUser] = useState(()=>{

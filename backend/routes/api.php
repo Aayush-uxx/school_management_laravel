@@ -1,11 +1,12 @@
 <?php
-use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\GradeController;
-use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TimetableController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -26,6 +27,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/leaves/{id}/reject', [LeaveController::class, 'reject']);
     Route::get('/teachers', [TeacherController::class, 'index']);
     Route::delete('/teachers/{id}', [TeacherController::class, 'destroy']);
+    Route::get('/timetable/versions', [TimetableController::class, 'versions']);
+    Route::get('/timetable/versions/{versionId}', [TimetableController::class, 'showVersion']);
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {

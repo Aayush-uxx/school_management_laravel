@@ -1,0 +1,37 @@
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.schedule-actions__button {
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--primary-dark);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.schedule-actions__button:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--surface-muted);
+}
+
+.schedule-actions__button--primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.schedule-actions__button--primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.schedule-actions__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
