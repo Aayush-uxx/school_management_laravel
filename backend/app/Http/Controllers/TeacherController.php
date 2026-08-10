@@ -29,4 +29,10 @@ class TeacherController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Teacher deleted']);
     }
+    public function takenAssignments()
+    {
+        $taken = \App\Models\TeacherAssignment::select('grade_id', 'subject_id')->distinct()->get();
+
+        return response()->json(['success' => true, 'taken' => $taken]);
+    }
 }

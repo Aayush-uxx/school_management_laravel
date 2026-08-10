@@ -4,15 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Grade;
-
+use App\Http\Controllers\TimetableController;
 class GradeController extends Controller
 {
     public function index()
     {
         return response()->json([
             'success' => true,
-            'grades' => Grade::all(),
+            'grades' => Grade::with('subjects')->get(),
         ]);
+    }
+
+    public function attachSubjects(Request $request, $id)
+    {
+        $request->validate([
+            'subject_ids' => 'required|array|min:1',
+            'subject_ids.*' => 'exists:subjects,id',
+        ]);
+
+        $grade = Grade::findOrFail($id);
+        $grade->subjects()->sync($request->subject_ids);
+
+        TimetableController::generateMasterTimetable();
+
+        return response()->json(['success' => true, 'grade' => $grade->load('subjects')]);
     }
 
     public function store(Request $request)

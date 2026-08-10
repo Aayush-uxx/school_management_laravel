@@ -14,8 +14,9 @@ Route::get('/subjects', [SubjectController::class, 'index']);
 Route::get('/grades', [GradeController::class, 'index']);
 Route::get('/timetable', [TimetableController::class, 'index']);
 Route::get('/timetable/grade/{gradeId}', [TimetableController::class, 'byGrade']);
-
+Route::get('/assignments/taken', [TeacherController::class, 'takenAssignments']);
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::put('/grades/{id}/subjects', [GradeController::class, 'attachSubjects']);
     Route::post('/subjects', [SubjectController::class, 'store']);
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
     Route::post('/grades', [GradeController::class, 'store']);

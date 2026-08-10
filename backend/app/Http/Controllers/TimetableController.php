@@ -49,7 +49,19 @@ class TimetableController extends Controller
         ];
 
         $grades = Grade::with('subjects')->get();
+        if ($grades->isEmpty()) return;
+
+        $existing = Timetable::select('grade_id', 'day', 'period', 'subject')->get()
+            ->keyBy(fn($t) => "{$t->grade_id}-{$t->day}-{$t->period}");
+
+        $assignmentMap = [];
+        foreach (TeacherAssignment::all() as $a) {
+            $assignmentMap["{$a->grade_id}-{$a->subject_id}"] = $a->user_id;
+        }
+
         $teacherBusy = [];
+        $rows = [];
+        $now = now();
 
         foreach ($grades as $gradeIndex => $grade) {
             $subjects = $grade->subjects;
@@ -57,31 +69,39 @@ class TimetableController extends Controller
 
             foreach ($days as $dayIndex => $day) {
                 foreach ($periods as $periodIndex => $period) {
+                    $key = "{$grade->id}-{$day}-{$period['id']}";
                     $rotationSeed = $periodIndex + $gradeIndex * 3 + $dayIndex * 5;
-                    $subject = $subjects[$rotationSeed % $subjects->count()];
-
-                    $slot = Timetable::firstOrCreate(
-                        ['grade_id' => $grade->id, 'day' => $day, 'period' => $period['id']],
-                        ['subject' => $subject->name, 'time' => $period['time'], 'teacher_id' => null, 'is_permanent' => true]
-                    );
-
-                    $assignment = TeacherAssignment::where('grade_id', $grade->id)
-                        ->where('subject_id', $subject->id)
-                        ->first();
+                    $defaultSubject = $subjects[$rotationSeed % $subjects->count()];
+                    $subjectName = $existing->has($key) ? $existing[$key]->subject : $defaultSubject->name;
+                    $subjectModel = $subjects->firstWhere('name', $subjectName) ?? $defaultSubject;
 
                     $teacherId = null;
-                    if ($assignment) {
-                        $key = $day . '-' . $period['id'];
-                        $teacherBusy[$assignment->user_id] = $teacherBusy[$assignment->user_id] ?? [];
-                        if (!in_array($key, $teacherBusy[$assignment->user_id])) {
-                            $teacherId = $assignment->user_id;
-                            $teacherBusy[$assignment->user_id][] = $key;
+                    $assignKey = "{$grade->id}-{$subjectModel->id}";
+                    if (isset($assignmentMap[$assignKey])) {
+                        $candidateId = $assignmentMap[$assignKey];
+                        $slotKey = "{$day}-{$period['id']}";
+                        $teacherBusy[$candidateId] = $teacherBusy[$candidateId] ?? [];
+                        if (!in_array($slotKey, $teacherBusy[$candidateId])) {
+                            $teacherId = $candidateId;
+                            $teacherBusy[$candidateId][] = $slotKey;
                         }
                     }
 
-                    $slot->update(['teacher_id' => $teacherId]);
+                    $rows[] = [
+                        'grade_id' => $grade->id,
+                        'day' => $day,
+                        'period' => $period['id'],
+                        'subject' => $subjectName,
+                        'time' => $period['time'],
+                        'teacher_id' => $teacherId,
+                        'is_permanent' => true,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
             }
         }
+
+        Timetable::upsert($rows, ['grade_id', 'day', 'period'], ['subject', 'time', 'teacher_id', 'is_permanent', 'updated_at']);
     }
 }

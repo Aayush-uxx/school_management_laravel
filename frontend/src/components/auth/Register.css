@@ -1,0 +1,137 @@
+.register-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+  
+  .register-container h2 {
+    text-align: center;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  
+  .assignment-picker {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .assignment-picker select {
+    flex: 1;
+  }
+  
+  .assignment-picker button {
+    padding: 8px 16px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .assignment-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+  }
+  
+  .assignment-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f4f7f6;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  
+  .assignment-list li button {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+  }
+  
+  .register-container > form > button[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+  }
+  
+  .register-container > form > button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  
+  .error-text {
+    color: red;
+    text-align: center;
+  }
+  .assign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  
+  .assign-grade-block {
+    border: 1px solid var(--border, #e2e4ec);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  
+  .assign-grade-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .assign-subject-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .assign-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+  
+  .assign-checkbox.disabled {
+    color: #9aa0ab;
+  }
+  
+  .muted-text {
+    color: #6b7280;
+    font-size: 14px;
+  }
