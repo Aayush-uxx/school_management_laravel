@@ -7,8 +7,6 @@ export const SCHEDULE_DAYS = [
 ];
 
 export const DAYS = SCHEDULE_DAYS.map((day) => day.label);
-
-// Keep these ids/times aligned with TimetableController::PERIODS.
 export const PERIODS = [
   { id: 1, name: 'Period 1', time: '10:00-10:45', isBreak: false },
   { id: 2, name: 'Period 2', time: '10:45-11:30', isBreak: false },
