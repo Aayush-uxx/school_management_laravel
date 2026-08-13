@@ -9,7 +9,7 @@ const TABS = [
   ['my-timetable', 'My Timetable'],
   ['whole-school', 'Whole School'],
   ['leaves', 'Apply Leave'],
-  ['settings', 'Account Settings'],
+  ['settings', 'Account Setting'],
 ];
 
 const TeacherPage = () => {
