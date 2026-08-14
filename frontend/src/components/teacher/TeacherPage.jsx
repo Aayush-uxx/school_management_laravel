@@ -10,6 +10,7 @@ const TABS = [
   ['whole-school', 'Whole School'],
   ['leaves', 'Apply Leave'],
   ['settings', 'Account Settings'],
+  ['note'],
 ];
 
 const TeacherPage = () => {
@@ -80,7 +81,7 @@ const TeacherPage = () => {
           setGradeTimetable(response.data.timetable || []);
           setGradeVersion(response.data.version || null);
         } catch (requestError) {
-          setActionMessage(requestError.response?.data?.message || 'Unable to load this timetable.');
+          setActionMessage(requestError.response?.data?.message || 'Failed to load the timetable !');
           setGradeTimetable([]);
           setGradeVersion(null);
         } finally {
