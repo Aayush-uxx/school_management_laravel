@@ -10,7 +10,6 @@ const TABS = [
   ['whole-school', 'Whole School'],
   ['leaves', 'Apply Leave'],
   ['settings', 'Account Settings'],
-  ['note'],
 ];
 
 const TeacherPage = () => {
